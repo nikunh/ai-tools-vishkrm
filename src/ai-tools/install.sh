@@ -19,8 +19,8 @@ echo "Installing AI development tools..."
 # Install fabric (AI-powered command line tool)
 if ! command -v fabric &> /dev/null; then
     echo "Installing fabric..."
-    # Install via pip
-    pip3 install fabric-ai
+    # Install via Go (fabric has migrated from Python to Go)
+    go install github.com/danielmiessler/fabric@latest
 fi
 
 # Install ollama (local LLM runner)
