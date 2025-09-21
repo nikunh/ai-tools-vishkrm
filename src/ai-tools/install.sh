@@ -16,17 +16,31 @@ get_architecture() {
 
 echo "Installing AI development tools..."
 
-# Install fabric (AI-powered command line tool)
-if ! command -v fabric &> /dev/null; then
-    echo "Installing fabric..."
-    # Install via Go (fabric has migrated from Python to Go)
-    go install github.com/danielmiessler/fabric@latest
+# Install GitHub Copilot CLI
+if ! command -v gh &> /dev/null; then
+    echo "Installing GitHub CLI (required for Copilot)..."
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+    chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+    apt-get update
+    apt-get install -y gh
+fi
+
+if ! gh extension list | grep -q copilot; then
+    echo "Installing GitHub Copilot CLI extension..."
+    gh extension install github/gh-copilot
 fi
 
 # Install ollama (local LLM runner)
 if ! command -v ollama &> /dev/null; then
     echo "Installing ollama..."
     curl -fsSL https://ollama.ai/install.sh | sh
+fi
+
+# Install Claude CLI
+if ! command -v claude &> /dev/null; then
+    echo "Installing Claude CLI..."
+    pip3 install claude-cli
 fi
 
 # Install chatblade (ChatGPT CLI)
@@ -36,4 +50,4 @@ if ! command -v chatblade &> /dev/null; then
 fi
 
 echo "AI tools installation completed successfully"
-echo "Available tools: fabric, ollama, chatblade"
+echo "Available tools: github copilot (gh copilot), claude, ollama, chatblade"
