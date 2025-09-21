@@ -1,6 +1,6 @@
 {
   "id": "ai-tools",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "name": "AI Development Tools",
   "description": "AI development tools including Claude API integration, shell integration, and AI development workflows.",
   "options": {},
