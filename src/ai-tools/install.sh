@@ -26,10 +26,9 @@ if ! command -v gh &> /dev/null; then
     apt-get install -y gh
 fi
 
-if ! gh extension list | grep -q copilot; then
-    echo "Installing GitHub Copilot CLI extension..."
-    gh extension install github/gh-copilot
-fi
+echo "GitHub CLI installed. Note: To install GitHub Copilot CLI extension, run:"
+echo "  gh auth login"
+echo "  gh extension install github/gh-copilot"
 
 # Install ollama (local LLM runner)
 if ! command -v ollama &> /dev/null; then
