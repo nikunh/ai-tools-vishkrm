@@ -38,8 +38,8 @@ fi
 
 # Install Claude CLI
 if ! command -v claude &> /dev/null; then
-    echo "Installing Claude CLI..."
-    pip3 install claude-cli
+    echo "Installing Claude CLI (anthropic-cli)..."
+    pip3 install git+https://github.com/dvcrn/anthropic-cli
 fi
 
 
