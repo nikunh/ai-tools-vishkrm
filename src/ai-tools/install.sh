@@ -43,11 +43,6 @@ if ! command -v claude &> /dev/null; then
     pip3 install claude-cli
 fi
 
-# Install chatblade (ChatGPT CLI)
-if ! command -v chatblade &> /dev/null; then
-    echo "Installing chatblade..."
-    pip3 install chatblade
-fi
 
 echo "AI tools installation completed successfully"
-echo "Available tools: github copilot (gh copilot), claude, ollama, chatblade"
+echo "Available tools: github copilot (gh copilot), claude, ollama"
