@@ -1,8 +1,8 @@
 {
   "id": "ai-tools",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "name": "AI Development Tools",
   "description": "AI development tools including Claude API integration, shell integration, and AI development workflows.",
   "options": {},
-  "installsAfter": ["ghcr.io/nikunh/001-dev-packages-vishkrm/001-dev-packages"]
+  "installsAfter": ["ghcr.io/nikunh/001-dev-packages-vishkrm/001-dev-packages", "ghcr.io/nikunh/go-env-vishkrm/go-env"]
 }
