@@ -36,10 +36,12 @@ if ! command -v ollama &> /dev/null; then
     curl -fsSL https://ollama.ai/install.sh | sh
 fi
 
-# Install Claude CLI
+# Install Claude Code globally
 if ! command -v claude &> /dev/null; then
-    echo "Installing Claude CLI (anthropic-cli)..."
-    pip3 install git+https://github.com/dvcrn/anthropic-cli
+    echo "Installing Claude Code CLI..."
+    npm install -g @anthropic-ai/claude-code
+    echo "Verifying Claude Code installation..."
+    claude --version || echo "Claude Code installation verification failed"
 fi
 
 
