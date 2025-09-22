@@ -76,6 +76,8 @@ jobs:
 
       - name: "Verify published version availability"
         if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Verifying that version ${{ steps.version.outputs.new_version }} was successfully published..."
 
