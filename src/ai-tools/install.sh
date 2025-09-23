@@ -3,6 +3,7 @@ set -e
 
 # Set DEBIAN_FRONTEND to noninteractive to prevent prompts
 export DEBIAN_FRONTEND=noninteractive
+# Token fix test - trigger automation Mon Sep 23 22:12:00 BST 2025
 
 # Function to get system architecture
 get_architecture() {
