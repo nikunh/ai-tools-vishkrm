@@ -93,7 +93,7 @@ jobs:
             echo "Verification attempt $attempt/5..."
 
             # Check if the version exists in the package registry
-            if gh api "orgs/nikunh/packages/container/${PACKAGE_NAME/\//%2F}/versions" --jq '.[] | select(.metadata.container.tags[] | contains("'$VERSION'")) | .metadata.container.tags[]' | grep -q "^$VERSION$"; then
+            if gh api "users/nikunh/packages/container/${PACKAGE_NAME/\//%2F}/versions" --jq '.[] | select(.metadata.container.tags[] | contains("'$VERSION'")) | .metadata.container.tags[]' | grep -q "^$VERSION$"; then
               echo "✅ Version $VERSION confirmed published and available"
               echo "version_verified=true" >> $GITHUB_OUTPUT
               break
@@ -104,7 +104,7 @@ jobs:
               else
                 echo "❌ Version $VERSION not found after 5 attempts"
                 echo "Available versions:"
-                gh api "orgs/nikunh/packages/container/${PACKAGE_NAME/\//%2F}/versions" --jq '.[] | .metadata.container.tags[]' | head -10 || true
+                gh api "users/nikunh/packages/container/${PACKAGE_NAME/\//%2F}/versions" --jq '.[] | .metadata.container.tags[]' | head -10 || true
                 exit 1
               fi
             fi
