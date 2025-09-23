@@ -116,18 +116,23 @@ jobs:
           echo "✅ Build and publish verified - notifying shellinator to update devcontainer.json..."
 
           # Trigger the batch update system in shellinator repo
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           gh api repos/nikunh/shellinator/dispatches \
             --method POST \
-            --field event_type="feature_version_update" \
-            --field client_payload="{
-              \"feature\": \"ai-tools-vishkrm/ai-tools\",
-              \"version\": \"${{ steps.version.outputs.new_version }}\",
-              \"old_version\": \"${{ steps.version.outputs.old_version }}\",
-              \"repository\": \"${{ github.repository }}\",
-              \"commit_sha\": \"${{ github.sha }}\",
-              \"verified\": true,
-              \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
-            }"
+            --input - << EOF
+          {
+            "event_type": "feature_version_update",
+            "client_payload": {
+              "feature": "ai-tools-vishkrm/ai-tools",
+              "version": "${{ steps.version.outputs.new_version }}",
+              "old_version": "${{ steps.version.outputs.old_version }}",
+              "repository": "${{ github.repository }}",
+              "commit_sha": "${{ github.sha }}",
+              "verified": true,
+              "timestamp": "$TIMESTAMP"
+            }
+          }
+          EOF
 
           echo "✅ Shellinator notification sent: ai-tools-vishkrm/ai-tools → ${{ steps.version.outputs.new_version }}"
           echo "The devcontainer.json will be updated within 10 minutes, or run './scripts/update-versions.sh force-now' for immediate update"
