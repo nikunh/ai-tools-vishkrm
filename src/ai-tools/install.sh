@@ -29,12 +29,18 @@ fi
 
 echo "GitHub CLI installed."
 
-# Install GitHub Copilot CLI extension
+# Install GitHub Copilot CLI extension (current official version)
 echo "Installing GitHub Copilot CLI extension..."
 gh extension install github/gh-copilot --force 2>/dev/null || {
     echo "Note: GitHub Copilot CLI will be available after authentication"
     echo "To complete setup, run: gh auth login && gh extension install github/gh-copilot"
 }
+
+# Install legacy Node.js GitHub Copilot CLI (deprecated but still useful)
+if ! command -v github-copilot-cli &> /dev/null; then
+    echo "Installing legacy GitHub Copilot CLI (Node.js version)..."
+    npm install -g @githubnext/github-copilot-cli || echo "Legacy Copilot CLI installation failed (optional)"
+fi
 
 # Install ollama (local LLM runner)
 if ! command -v ollama &> /dev/null; then
@@ -53,6 +59,7 @@ fi
 
 echo "AI tools installation completed successfully"
 echo "Available tools:"
-echo "  - GitHub Copilot CLI (gh copilot) - AI pair programmer"
+echo "  - GitHub Copilot CLI (gh copilot) - AI pair programmer (official)"
+echo "  - GitHub Copilot CLI Legacy (github-copilot-cli) - Node.js version"
 echo "  - Claude Code (claude) - Anthropic's AI assistant"
 echo "  - Ollama (ollama) - Local LLM runner"# Auto-trigger build Wed Sep 25 14:42:00 GMT 2024
