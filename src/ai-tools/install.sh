@@ -27,9 +27,14 @@ if ! command -v gh &> /dev/null; then
     apt-get install -y gh
 fi
 
-echo "GitHub CLI installed. Note: To install GitHub Copilot CLI extension, run:"
-echo "  gh auth login"
-echo "  gh extension install github/gh-copilot"
+echo "GitHub CLI installed."
+
+# Install GitHub Copilot CLI extension
+echo "Installing GitHub Copilot CLI extension..."
+gh extension install github/gh-copilot --force 2>/dev/null || {
+    echo "Note: GitHub Copilot CLI will be available after authentication"
+    echo "To complete setup, run: gh auth login && gh extension install github/gh-copilot"
+}
 
 # Install ollama (local LLM runner)
 if ! command -v ollama &> /dev/null; then
@@ -47,4 +52,7 @@ fi
 
 
 echo "AI tools installation completed successfully"
-echo "Available tools: github copilot (gh copilot), claude, ollama"# Auto-trigger build Wed Sep 25 14:42:00 GMT 2024
+echo "Available tools:"
+echo "  - GitHub Copilot CLI (gh copilot) - AI pair programmer"
+echo "  - Claude Code (claude) - Anthropic's AI assistant"
+echo "  - Ollama (ollama) - Local LLM runner"# Auto-trigger build Wed Sep 25 14:42:00 GMT 2024
