@@ -56,10 +56,19 @@ if ! command -v claude &> /dev/null; then
     claude --version || echo "Claude Code installation verification failed"
 fi
 
+# Install OpenCode AI CLI
+if ! command -v opencode &> /dev/null; then
+    echo "Installing OpenCode AI CLI..."
+    npm install -g @opencode-ai/opencode || echo "OpenCode AI installation failed (optional)"
+    echo "Verifying OpenCode installation..."
+    opencode --version || echo "OpenCode verification failed"
+fi
+
 
 echo "AI tools installation completed successfully"
 echo "Available tools:"
 echo "  - GitHub Copilot CLI (gh copilot) - AI pair programmer (official)"
 echo "  - GitHub Copilot CLI Legacy (github-copilot-cli) - Node.js version"
 echo "  - Claude Code (claude) - Anthropic's AI assistant"
+echo "  - OpenCode AI (opencode) - AI-powered code completion and chat"
 echo "  - Ollama (ollama) - Local LLM runner"# Auto-trigger build Wed Sep 25 14:42:00 GMT 2024
