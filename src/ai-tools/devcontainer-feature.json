@@ -1,6 +1,6 @@
 {
   "id": "ai-tools",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "name": "AI Development Tools",
   "description": "AI development tools including GitHub Copilot CLI, Claude CLI, and Ollama for AI-powered development workflows. Features auto-versioning and update notifications.",
   "options": {},
