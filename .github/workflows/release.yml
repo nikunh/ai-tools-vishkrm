@@ -1,0 +1,139 @@
+name: "Release dev container features"
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'Bump') && github.event.head_commit.author.name != 'github-actions[bot]'"
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.DISPATCH_TOKEN }}
+
+      - name: "Setup Node.js for version management"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: "Auto-increment feature version"
+        id: version
+        run: |
+          # Get current version from devcontainer-feature.json
+          FEATURE_FILE="src/ai-tools/devcontainer-feature.json"
+          CURRENT_VERSION=$(jq -r '.version' "$FEATURE_FILE")
+
+          echo "Current version: $CURRENT_VERSION"
+
+          # Increment patch version (0.0.X -> 0.0.X+1)
+          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+          MAJOR=${VERSION_PARTS[0]}
+          MINOR=${VERSION_PARTS[1]}
+          PATCH=${VERSION_PARTS[2]}
+
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+
+          echo "New version: $NEW_VERSION"
+
+          # Update the version in devcontainer-feature.json
+          jq --arg version "$NEW_VERSION" '.version = $version' "$FEATURE_FILE" > tmp.json
+          mv tmp.json "$FEATURE_FILE"
+
+          # Set outputs
+          echo "old_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: "Commit version bump"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add src/ai-tools/devcontainer-feature.json
+          git commit -m "Bump ai-tools version: ${{ steps.version.outputs.old_version }} → ${{ steps.version.outputs.new_version }}"
+
+
+
+          git push
+
+      - name: "Publish Features"
+        uses: devcontainers/action@v1
+        with:
+          publish-features: "true"
+          base-path-to-features: "./src"
+          generate-docs: "true"
+        env:
+          GITHUB_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+
+      - name: "Verify published version availability"
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+        run: |
+          echo "Verifying that version ${{ steps.version.outputs.new_version }} was successfully published..."
+
+          PACKAGE_NAME="ai-tools-vishkrm/ai-tools"
+          VERSION="${{ steps.version.outputs.new_version }}"
+
+          # Wait for registry to update (GitHub Container Registry can take a moment)
+          echo "Waiting 15 seconds for registry to update..."
+          sleep 15
+
+          # Try up to 5 times with exponential backoff
+          for attempt in {1..5}; do
+            echo "Verification attempt $attempt/5..."
+
+            # Check if the version exists in the package registry
+            if gh api "users/nikunh/packages/container/${PACKAGE_NAME/\//%2F}/versions" --jq '.[] | select(.metadata.container.tags[] | contains("'$VERSION'")) | .metadata.container.tags[]' | grep -q "^$VERSION$"; then
+              echo "✅ Version $VERSION confirmed published and available"
+              echo "version_verified=true" >> $GITHUB_OUTPUT
+              break
+            else
+              echo "⏳ Version $VERSION not yet available, waiting..."
+              if [ $attempt -lt 5 ]; then
+                sleep $((attempt * 5))  # 5, 10, 15, 20 seconds
+              else
+                echo "❌ Version $VERSION not found after 5 attempts"
+                echo "Available versions:"
+                gh api "users/nikunh/packages/container/${PACKAGE_NAME/\//%2F}/versions" --jq '.[] | .metadata.container.tags[]' | head -10 || true
+                exit 1
+              fi
+            fi
+          done
+
+      - name: "Notify shellinator for devcontainer.json update"
+        if: success()
+        run: |
+          echo "✅ Build and publish verified - notifying shellinator to update devcontainer.json..."
+
+          # Trigger the batch update system in shellinator repo
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          gh api repos/nikunh/shellinator/dispatches \
+            --method POST \
+            --input - << EOF
+          {
+            "event_type": "feature_version_update",
+            "client_payload": {
+              "feature": "ai-tools-vishkrm/ai-tools",
+              "version": "${{ steps.version.outputs.new_version }}",
+              "old_version": "${{ steps.version.outputs.old_version }}",
+              "repository": "${{ github.repository }}",
+              "commit_sha": "${{ github.sha }}",
+              "verified": true,
+              "timestamp": "$TIMESTAMP"
+            }
+          }
+          EOF
+
+          echo "✅ Shellinator notification sent: ai-tools-vishkrm/ai-tools → ${{ steps.version.outputs.new_version }}"
+          echo "The devcontainer.json will be updated within 10 minutes, or run './scripts/update-versions.sh force-now' for immediate update"
+        env:
+          GITHUB_TOKEN: ${{ secrets.DISPATCH_TOKEN }}

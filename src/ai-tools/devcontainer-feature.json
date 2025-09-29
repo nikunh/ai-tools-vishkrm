@@ -1,0 +1,13 @@
+{
+  "id": "ai-tools",
+  "version": "0.0.1",
+  "name": "AI Development Tools",
+  "description": "AI development tools including GitHub Copilot CLI, Claude CLI, and Ollama for AI-powered development workflows. Features auto-versioning and update notifications.",
+  "options": {},
+  "installsAfter": [
+    "ghcr.io/nikunh/001-dev-packages-vishkrm/001-dev-packages",
+    "ghcr.io/nikunh/002-user-setup-vishkrm/002-user-setup",
+    "ghcr.io/nikunh/003-zsh-setup-vishkrm/003-zsh-setup",
+    "ghcr.io/nikunh/node-env-vishkrm/node-env"
+  ]
+}
