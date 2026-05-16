@@ -55,10 +55,15 @@ if ! command -v copilot &> /dev/null; then
 fi
 
 # Install ollama (local LLM runner)
-if ! command -v ollama &> /dev/null; then
-    echo "Installing ollama..."
-    curl -fsSL https://ollama.ai/install.sh | sh
-fi
+# DISABLED 2026-05-13 per D9 phase 1 (image slimming). Saves ~1.7 GB
+# (ollama bundles CUDA/ROCm runtime libs regardless of GPU presence).
+# Re-enable by uncommenting the block below if a local-LLM workflow is needed,
+# or prefer runtime install via shellinator-enhance (D3 tier).
+# if ! command -v ollama &> /dev/null; then
+#     echo "Installing ollama..."
+#     apt-get update && apt-get install -y --no-install-recommends zstd
+#     curl -fsSL https://ollama.ai/install.sh | sh
+# fi
 
 # Install Claude Code globally
 if ! command -v claude &> /dev/null; then
@@ -83,7 +88,7 @@ echo "  - GitHub Copilot CLI Extension (gh copilot) - AI pair programmer via Git
 echo "  - GitHub Copilot CLI Standalone (copilot) - Terminal-native AI coding agent"
 echo "  - Claude Code (claude) - Anthropic's AI assistant"
 echo "  - OpenCode AI (opencode) - AI-powered code completion and chat"
-echo "  - Ollama (ollama) - Local LLM runner"
+# echo "  - Ollama (ollama) - Local LLM runner"  # disabled per D9 phase 1
 
 log_debug "=== AI-TOOLS INSTALL COMPLETED ==="
 # Auto-trigger build Wed Sep 25 14:42:00 GMT 2024
