@@ -111,12 +111,54 @@ USER_HOME="$(getent passwd "$USERNAME" 2>/dev/null | cut -d: -f6)"
 USER_GROUP="$(id -gn "$USERNAME" 2>/dev/null || echo users)"
 
 install -d -m 0755 -o "$USERNAME" -g "$USER_GROUP" "$USER_HOME/.local/bin"
+# Runtime path-lookup wrapper. Resolves real claude via system PATH (excluding
+# our own dir to avoid self-recursion), with a fallback candidate list, and an
+# informative error message if claude isn't found anywhere.
 cat > "$USER_HOME/.local/bin/claude" << 'CLAUDE_WRAPPER_EOF'
 #!/bin/bash
-if [ -n "${CLAUDE_CHANNELS:-}" ]; then
-    exec /usr/local/bin/claude --dangerously-load-development-channels "$CLAUDE_CHANNELS" "$@"
+# vishkrm claude wrapper — exec real claude with optional CLAUDE_CHANNELS handling.
+# Path resolved at runtime to survive npm/path changes between rebuilds.
+
+SELF=$(realpath "$0" 2>/dev/null)
+SELF_DIR=$(dirname "$SELF")
+
+# Primary: system PATH lookup with our own dir stripped
+CLEAN_PATH=$(echo "$PATH" | tr ':' '\n' | grep -vFx "$SELF_DIR" | tr '\n' ':')
+REAL=$(PATH="$CLEAN_PATH" command -v claude 2>/dev/null)
+
+# Fallback: known candidate locations in case PATH is unusual
+if [ -z "$REAL" ]; then
+    for p in /usr/local/bin/claude /usr/bin/claude /opt/homebrew/bin/claude; do
+        if [ -x "$p" ] && [ "$(realpath "$p" 2>/dev/null)" != "$SELF" ]; then
+            REAL="$p"; break
+        fi
+    done
 fi
-exec /usr/local/bin/claude "$@"
+
+if [ -z "$REAL" ]; then
+    cat >&2 <<MSG
+❌ vishkrm claude wrapper at $0 cannot find the real claude binary.
+
+Checked via:
+  - PATH lookup (excluding $SELF_DIR): no match
+  - Fallback paths: /usr/local/bin /usr/bin /opt/homebrew/bin: no match
+
+This usually means Claude Code is not installed.
+
+To install:
+  sudo npm install -g @anthropic-ai/claude-code
+
+Or check what's there:
+  find / -name 'claude*' -type f -executable 2>/dev/null
+  npm list -g --depth=0 | grep claude
+MSG
+    exit 127
+fi
+
+if [ -n "${CLAUDE_CHANNELS:-}" ]; then
+    exec "$REAL" --dangerously-load-development-channels "$CLAUDE_CHANNELS" "$@"
+fi
+exec "$REAL" "$@"
 CLAUDE_WRAPPER_EOF
 chmod 0755 "$USER_HOME/.local/bin/claude"
 chown "$USERNAME:$USER_GROUP" "$USER_HOME/.local/bin/claude"
