@@ -1,0 +1,16 @@
+{
+  "name": "vishkrm-channel",
+  "version": "1.0.0",
+  "description": "Inter-session MCP channel for Vishkrm Claude sessions",
+  "type": "module",
+  "bin": {
+    "vishkrm-channel": "./bin.sh"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "tsx": "^4.19.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
