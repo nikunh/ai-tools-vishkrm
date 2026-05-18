@@ -1,14 +1,19 @@
 #!/usr/bin/env zsh
 set -e
 
-# Logging mechanism for debugging
+# Logging mechanism for debugging.
+# Must NEVER kill the script under `set -e` if the log file becomes unwritable
+# (e.g. buildkit /tmp quirks, user-context switches, or a prior failed run left
+# the file with restrictive perms). Append `|| true` so log_debug is best-effort.
 LOG_FILE="/tmp/ai-tools-install.log"
 log_debug() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [DEBUG] $*" >> "$LOG_FILE"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [DEBUG] $*" >> "$LOG_FILE" 2>/dev/null || true
 }
 
-# Initialize logging
+# Initialize logging + ensure file is world-writable so post-install steps
+# (incl. any later user-context calls) can append without permission denied.
 log_debug "=== AI-TOOLS INSTALL STARTED ==="
+chmod 0666 "$LOG_FILE" 2>/dev/null || true
 log_debug "Script path: $0"
 log_debug "PWD: $(pwd)"
 log_debug "Environment: USER=$USER HOME=$HOME"
