@@ -1,6 +1,6 @@
 {
   "id": "ai-tools",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "name": "AI Development Tools",
   "description": "AI development tools including GitHub Copilot CLI, Claude CLI, OpenCode, and the Pi research agent (cheap headless no-train OpenRouter agent; key sourced at runtime) for AI-powered development workflows. Features auto-versioning and update notifications.",
   "options": {},
