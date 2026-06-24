@@ -2,7 +2,7 @@
   "id": "ai-tools",
   "version": "0.0.8",
   "name": "AI Development Tools",
-  "description": "AI development tools including GitHub Copilot CLI, Claude CLI, and Ollama for AI-powered development workflows. Features auto-versioning and update notifications.",
+  "description": "AI development tools including GitHub Copilot CLI, Claude CLI, OpenCode, and the Pi research agent (cheap headless no-train OpenRouter agent; key sourced at runtime) for AI-powered development workflows. Features auto-versioning and update notifications.",
   "options": {},
   "installsAfter": [
     "ghcr.io/nikunh/001-dev-packages-vishkrm/001-dev-packages",

@@ -86,6 +86,15 @@ if ! command -v opencode &> /dev/null; then
     opencode --version || echo "OpenCode verification failed"
 fi
 
+# Install Pi research agent (cheap, headless, no-train research/bulk agent —
+# complementary to Claude, NOT a replacement: no MCP, can't reach lpass/channel).
+# Routes to no-train OpenRouter models. Key is sourced at RUNTIME (D4) — never baked.
+if ! command -v pi &> /dev/null; then
+    echo "Installing Pi research agent (@earendil-works/pi-coding-agent)..."
+    npm install -g @earendil-works/pi-coding-agent || echo "Pi installation failed (optional)"
+    pi --version || echo "Pi verification failed"
+fi
+
 
 echo "AI tools installation completed successfully"
 echo "Available tools:"
@@ -93,6 +102,7 @@ echo "  - GitHub Copilot CLI Extension (gh copilot) - AI pair programmer via Git
 echo "  - GitHub Copilot CLI Standalone (copilot) - Terminal-native AI coding agent"
 echo "  - Claude Code (claude) - Anthropic's AI assistant"
 echo "  - OpenCode AI (opencode) - AI-powered code completion and chat"
+echo "  - Pi (pi) - cheap headless no-train research agent (OpenRouter; key at runtime)"
 # echo "  - Ollama (ollama) - Local LLM runner"  # disabled per D9 phase 1
 
 # Generic Claude wrapper — if CLAUDE_CHANNELS env var is set by a downstream
@@ -163,6 +173,49 @@ CLAUDE_WRAPPER_EOF
 chmod 0755 "$USER_HOME/.local/bin/claude"
 chown "$USERNAME:$USER_GROUP" "$USER_HOME/.local/bin/claude"
 echo "claude wrapper installed at $USER_HOME/.local/bin/claude"
+
+# --- Pi lean config (secret-free) -------------------------------------------
+# Seed default no-train OpenRouter config so every vishkrm container has a
+# privacy-safe Pi out of the box. The OpenRouter API key (auth.json) is a D4
+# runtime secret and is NEVER written here — sourced at runtime from env
+# OPENROUTER_API_KEY or the lpass-cred broker. Only seed if absent so we never
+# clobber an operator's hand-tuned config on rebuild.
+PI_DIR="$USER_HOME/.pi/agent"
+install -d -m 0755 -o "$USERNAME" -g "$USER_GROUP" "$PI_DIR"
+if [ ! -f "$PI_DIR/settings.json" ]; then
+    cat > "$PI_DIR/settings.json" << 'PI_SETTINGS_EOF'
+{
+  "defaultProvider": "openrouter",
+  "defaultModel": "qwen/qwen3-coder",
+  "defaultThinkingLevel": "medium",
+  "enabledModels": [
+    "qwen/qwen3-coder",
+    "deepseek/deepseek-v4-flash",
+    "z-ai/glm-4.7"
+  ]
+}
+PI_SETTINGS_EOF
+    chown "$USERNAME:$USER_GROUP" "$PI_DIR/settings.json"
+    echo "Pi settings seeded at $PI_DIR/settings.json"
+fi
+if [ ! -f "$PI_DIR/models.json" ]; then
+    cat > "$PI_DIR/models.json" << 'PI_MODELS_EOF'
+{
+  "providers": {
+    "openrouter": {
+      "modelOverrides": {
+        "qwen/qwen3-coder":           { "name": "Qwen3 Coder (no-train)",                "maxTokens": 32768, "compat": { "openRouterRouting": { "data_collection": "deny" } } },
+        "deepseek/deepseek-v4-flash": { "name": "DeepSeek V4 Flash (reasoning, no-train)", "maxTokens": 16384, "compat": { "openRouterRouting": { "data_collection": "deny" } } },
+        "z-ai/glm-4.7":               { "name": "GLM-4.7 (agentic, no-train)",            "maxTokens": 32768, "compat": { "openRouterRouting": { "data_collection": "deny" } } }
+      }
+    }
+  }
+}
+PI_MODELS_EOF
+    chown "$USERNAME:$USER_GROUP" "$PI_DIR/models.json"
+    echo "Pi models seeded at $PI_DIR/models.json"
+fi
+# ---------------------------------------------------------------------------
 
 log_debug "=== AI-TOOLS INSTALL COMPLETED ==="
 # Auto-trigger build Wed Sep 25 14:42:00 GMT 2024
