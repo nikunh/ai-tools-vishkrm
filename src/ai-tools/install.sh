@@ -103,6 +103,7 @@ echo "  - GitHub Copilot CLI Standalone (copilot) - Terminal-native AI coding ag
 echo "  - Claude Code (claude) - Anthropic's AI assistant"
 echo "  - OpenCode AI (opencode) - AI-powered code completion and chat"
 echo "  - Pi (pi) - cheap headless no-train research agent (OpenRouter; key at runtime)"
+echo "  - herdr (herdr) - agent-aware terminal multiplexer; tmux-style keys, resumes claude sessions"
 # echo "  - Ollama (ollama) - Local LLM runner"  # disabled per D9 phase 1
 
 # Generic Claude wrapper — if CLAUDE_CHANNELS env var is set by a downstream
@@ -173,6 +174,35 @@ CLAUDE_WRAPPER_EOF
 chmod 0755 "$USER_HOME/.local/bin/claude"
 chown "$USERNAME:$USER_GROUP" "$USER_HOME/.local/bin/claude"
 echo "claude wrapper installed at $USER_HOME/.local/bin/claude"
+
+# --- herdr (agent-aware terminal multiplexer) -------------------------------
+# tmux-style multiplexer that recognises claude sessions and can resume them.
+# Static-pie binary from GitHub releases, PINNED for reproducible builds
+# (bump HERDR_VERSION to upgrade; `herdr update` self-updates at runtime).
+# Installed to the user's ~/.local/bin, same place as the claude wrapper.
+# The tmux-style keymap + NAS-persistence of session state are shipped by the
+# shellinator-dotfiles feature (.herdr-persist.zshrc + seeded config.toml).
+HERDR_VERSION="0.9.3"
+case "$(get_architecture)" in
+    amd64) HERDR_ASSET="herdr-linux-x86_64" ;;
+    arm64) HERDR_ASSET="herdr-linux-aarch64" ;;
+    *)     HERDR_ASSET="" ;;
+esac
+if [ -n "$HERDR_ASSET" ]; then
+    echo "Installing herdr ${HERDR_VERSION} (${HERDR_ASSET})..."
+    HERDR_BIN="$USER_HOME/.local/bin/herdr"
+    if curl -fsSL "https://github.com/herdrdev/herdr/releases/download/v${HERDR_VERSION}/${HERDR_ASSET}" -o "$HERDR_BIN"; then
+        chmod 0755 "$HERDR_BIN"
+        chown "$USERNAME:$USER_GROUP" "$HERDR_BIN"
+        echo "Verifying herdr installation..."
+        "$HERDR_BIN" --version || echo "herdr verification failed"
+    else
+        echo "herdr download failed (optional)"
+        rm -f "$HERDR_BIN"
+    fi
+else
+    echo "herdr: unsupported architecture, skipping"
+fi
 
 # --- Pi lean config (secret-free) -------------------------------------------
 # Seed default no-train OpenRouter config so every vishkrm container has a
