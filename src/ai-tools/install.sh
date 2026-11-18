@@ -106,6 +106,31 @@ echo "  - Pi (pi) - cheap headless no-train research agent (OpenRouter; key at r
 echo "  - herdr (herdr) - agent-aware terminal multiplexer; tmux-style keys, resumes claude sessions"
 # echo "  - Ollama (ollama) - Local LLM runner"  # disabled per D9 phase 1
 
+# Install nats-server — the vishkrm-channel bus broker (NATS/JetStream era, 2026-11-18).
+# The channel node project is NAS-resident; this just provides the broker binary.
+# connect-nas (nas-connector) wires the shim + host-local config + starts it at runtime.
+NATS_VERSION="2.15.3"
+case "$(uname -m)" in
+    x86_64|amd64)  NATS_ARCH=amd64 ;;
+    aarch64|arm64) NATS_ARCH=arm64 ;;
+    *)             NATS_ARCH="" ;;
+esac
+if [ -z "$NATS_ARCH" ]; then
+    echo "Warning: unsupported arch $(uname -m) — nats-server skipped (bus unavailable)"
+elif command -v nats-server >/dev/null 2>&1; then
+    echo "nats-server already present — skipping"
+else
+    NATS_DIR="nats-server-v${NATS_VERSION}-linux-${NATS_ARCH}"
+    NATS_TMP="$(mktemp -d)"
+    if curl -fsSL "https://github.com/nats-io/nats-server/releases/download/v${NATS_VERSION}/${NATS_DIR}.tar.gz" -o "$NATS_TMP/nats.tgz" && tar -xzf "$NATS_TMP/nats.tgz" -C "$NATS_TMP"; then
+        install -m 0755 "$NATS_TMP/$NATS_DIR/nats-server" /usr/local/bin/nats-server
+        echo "nats-server ${NATS_VERSION} installed at /usr/local/bin/nats-server"
+    else
+        echo "Warning: nats-server download failed — bus unavailable until installed"
+    fi
+    rm -rf "$NATS_TMP"
+fi
+
 # Generic Claude wrapper — if CLAUDE_CHANNELS env var is set by a downstream
 # feature, exec claude with --dangerously-load-development-channels using
 # that value. Otherwise passthrough. No channel-specific knowledge here.
@@ -167,7 +192,17 @@ MSG
 fi
 
 if [ -n "${CLAUDE_CHANNELS:-}" ]; then
-    exec "$REAL" --dangerously-load-development-channels "$CLAUDE_CHANNELS" "$@"
+    # Also start the channel's MCP server, so plain `claude` (and herdr's
+    # `claude --resume <id>` on restore) joins the bus, not just `c`/`cc`.
+    MCP=()
+    case "$CLAUDE_CHANNELS" in
+      *server:vishkrm-channel*)
+        VC=$(command -v vishkrm-channel 2>/dev/null)
+        if [ -n "$VC" ] && ! printf '%s\n' "$@" | grep -qx -- '--mcp-config'; then
+          MCP=(--mcp-config "{\"mcpServers\":{\"vishkrm-channel\":{\"type\":\"stdio\",\"command\":\"$VC\"}}}")
+        fi ;;
+    esac
+    exec "$REAL" "${MCP[@]}" --dangerously-load-development-channels "$CLAUDE_CHANNELS" "$@"
 fi
 exec "$REAL" "$@"
 CLAUDE_WRAPPER_EOF
