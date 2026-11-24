@@ -239,6 +239,46 @@ else
     echo "herdr: unsupported architecture, skipping"
 fi
 
+# --- herdr-core (runtime the Herdr mobile/desktop app attaches to) -----------
+# SEPARATE from the herdr TUI above. The Herdr mobile app (herdr.dev, Nov 2026)
+# connects ONLY to herdr-core over SSH (`herdr-core connect`), never the TUI.
+# Pinned tarball + sha256 from releases.herdr.dev (bump HERDR_CORE_VERSION to
+# upgrade). Symlinked into /usr/local/bin so a NON-interactive SSH attach (the
+# app) finds it — ~/.local/bin is NOT on the sshd default PATH.
+HERDR_CORE_VERSION="0.1.22"
+case "$(get_architecture)" in
+    amd64) HC_ASSET="herdr-core-linux-x86_64";  HC_SHA="3054ec3992ce80c5715d721caa9dcefa6056721d15dc113f4750afce763ba5df" ;;
+    arm64) HC_ASSET="herdr-core-linux-aarch64"; HC_SHA="98757985245d45f8d73dd85e68b139b7f167c28488bb89edd9834c3f5a5cf4cf" ;;
+    *)     HC_ASSET=""; HC_SHA="" ;;
+esac
+if [ -n "$HC_ASSET" ]; then
+    echo "Installing herdr-core ${HERDR_CORE_VERSION} (${HC_ASSET})..."
+    HC_TMP="$(mktemp -d)"
+    if curl -fsSL "https://releases.herdr.dev/core/${HERDR_CORE_VERSION}/${HC_ASSET}.tar.gz" -o "$HC_TMP/hc.tgz"; then
+        if echo "${HC_SHA}  ${HC_TMP}/hc.tgz" | sha256sum -c - >/dev/null 2>&1; then
+            tar -xzf "$HC_TMP/hc.tgz" -C "$HC_TMP"
+            HC_BIN_SRC="$(find "$HC_TMP" -type f -name herdr-core 2>/dev/null | head -1)"
+            [ -z "$HC_BIN_SRC" ] && HC_BIN_SRC="$(find "$HC_TMP" -maxdepth 3 -type f -perm -u+x ! -name '*.tgz' 2>/dev/null | head -1)"
+            if [ -n "$HC_BIN_SRC" ]; then
+                install -m 0755 -o "$USERNAME" -g "$USER_GROUP" "$HC_BIN_SRC" "$USER_HOME/.local/bin/herdr-core"
+                ln -sf "$USER_HOME/.local/bin/herdr-core" /usr/local/bin/herdr-core
+                ln -sf "$USER_HOME/.local/bin/herdr-core" /usr/local/bin/hc
+                echo "Verifying herdr-core installation..."
+                "$USER_HOME/.local/bin/herdr-core" --version || echo "herdr-core verification failed"
+            else
+                echo "herdr-core: binary not found in tarball (optional)"
+            fi
+        else
+            echo "herdr-core: sha256 mismatch, skipping (optional)"
+        fi
+    else
+        echo "herdr-core download failed (optional)"
+    fi
+    rm -rf "$HC_TMP"
+else
+    echo "herdr-core: unsupported architecture, skipping"
+fi
+
 # --- Pi lean config (secret-free) -------------------------------------------
 # Seed default no-train OpenRouter config so every vishkrm container has a
 # privacy-safe Pi out of the box. The OpenRouter API key (auth.json) is a D4
