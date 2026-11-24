@@ -258,7 +258,9 @@ if [ -n "$HC_ASSET" ]; then
         if echo "${HC_SHA}  ${HC_TMP}/hc.tgz" | sha256sum -c - >/dev/null 2>&1; then
             tar -xzf "$HC_TMP/hc.tgz" -C "$HC_TMP"
             HC_BIN_SRC="$(find "$HC_TMP" -type f -name herdr-core 2>/dev/null | head -1)"
-            [ -z "$HC_BIN_SRC" ] && HC_BIN_SRC="$(find "$HC_TMP" -maxdepth 3 -type f -perm -u+x ! -name '*.tgz' 2>/dev/null | head -1)"
+            if [ -z "$HC_BIN_SRC" ]; then
+                HC_BIN_SRC="$(find "$HC_TMP" -maxdepth 3 -type f -perm -u+x ! -name '*.tgz' 2>/dev/null | head -1)"
+            fi
             if [ -n "$HC_BIN_SRC" ]; then
                 install -m 0755 -o "$USERNAME" -g "$USER_GROUP" "$HC_BIN_SRC" "$USER_HOME/.local/bin/herdr-core"
                 ln -sf "$USER_HOME/.local/bin/herdr-core" /usr/local/bin/herdr-core
